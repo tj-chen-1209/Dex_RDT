@@ -11,7 +11,7 @@
     "language_table": 10,
     "columbia_cairlab_pusht_real": 10,
     "stanford_kuka_multimodal_dataset_converted_externally_to_rlds": 20,
-    "nyu_rot_dataset_converted_externally_to_rlds":3,
+    "nyu_rot_dataset_converted_externally_to_rlds": 3,
     "stanford_hydra_dataset_converted_externally_to_rlds": 10,
     "austin_buds_dataset_converted_externally_to_rlds": 20,
     "nyu_franka_play_dataset_converted_externally_to_rlds": 3,
@@ -61,5 +61,6 @@
     "agilex": 25,
     "rh20t": 10,
     "calvin": 30,
-    "bridgev2": 5
+    "bridgev2": 5,
+    "libero_90": 20
 }

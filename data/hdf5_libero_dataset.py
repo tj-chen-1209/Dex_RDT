@@ -4,7 +4,6 @@ import json
 
 import h5py
 import yaml
-import cv2
 import numpy as np
 
 from configs.state_vec import STATE_VEC_IDX_MAPPING
@@ -169,14 +168,13 @@ class HDF5VLADataset:
                 "instruction": instruction
             }
 
-            # Rescale gripper to [0, 1]
-            # Max-min normalization for the gripper states
+            # Max-min normalization for the gripper states (last 2 dimensions)
             qpos_min = -0.04245
             qpos_max = 0.05185
             qpos[..., -2:] = (qpos[..., -2:] - qpos_min) / \
                 (qpos_max - qpos_min)
 
-            # actions[-1] is the gripper state {-1, 1}
+            # Extract actions: 6D EEF velocities + 1D gripper velocity
             target_qpos = actions[step_id:step_id+self.CHUNK_SIZE]
 
             # Parse the state and action
@@ -212,24 +210,33 @@ class HDF5VLADataset:
             state_norm = fill_in_state(state_norm)
             # If action's format is different from state's,
             # you may implement fill_in_action()
+
             def fill_in_action(values):
                 UNI_ACTION_INDICES = [
-                    STATE_VEC_IDX_MAPPING[f"eef_vel_x"]
+                    STATE_VEC_IDX_MAPPING["eef_vel_x"],
+                    STATE_VEC_IDX_MAPPING["eef_vel_y"],
+                    STATE_VEC_IDX_MAPPING["eef_vel_z"],
+                    STATE_VEC_IDX_MAPPING["eef_angular_vel_roll"],
+                    STATE_VEC_IDX_MAPPING["eef_angular_vel_pitch"],
+                    STATE_VEC_IDX_MAPPING["eef_angular_vel_yaw"],
                 ] + [
-                    STATE_VEC_IDX_MAPPING[f"gripper_joint_{i}_vel"] for i in range(2)
+                    STATE_VEC_IDX_MAPPING["gripper_open_vel"]
                 ]
                 uni_vec = np.zeros(values.shape[:-1] + (self.STATE_DIM,))
                 uni_vec[..., UNI_ACTION_INDICES] = values
                 return uni_vec
-            actions = fill_in_state(actions)
+            actions = fill_in_action(actions)
 
-            # Parse the images
+            # Parse the images libero的图片是numpy数组
             def parse_img(key):
+                # Check if the key exists in the demo
+                if key not in demo['obs']:
+                    return np.zeros((self.IMG_HISORY_SIZE, 0, 0, 0))
+
                 imgs = []
                 for i in range(max(step_id-self.IMG_HISORY_SIZE+1, 0), step_id+1):
-                    img = f['observations']['images'][key][i]
-                    imgs.append(cv2.imdecode(np.frombuffer(
-                        img, np.uint8), cv2.IMREAD_COLOR))
+                    img = demo['obs'][key][i]
+                    imgs.append(img)
                 imgs = np.stack(imgs)
                 if imgs.shape[0] < self.IMG_HISORY_SIZE:
                     # Pad the images using the first image
@@ -239,8 +246,7 @@ class HDF5VLADataset:
                         imgs
                     ], axis=0)
                 return imgs
-            # `cam_high` is the external camera image
-            cam_high = parse_img('cam_high')
+
             # For step_id = first_idx - 1, the valid_len should be one
             valid_len = min(step_id - (first_idx - 1) +
                             1, self.IMG_HISORY_SIZE)
@@ -248,10 +254,20 @@ class HDF5VLADataset:
                 [False] * (self.IMG_HISORY_SIZE - valid_len) +
                 [True] * valid_len
             )
-            cam_left_wrist = parse_img('cam_left_wrist')
-            cam_left_wrist_mask = cam_high_mask.copy()
-            cam_right_wrist = parse_img('cam_right_wrist')
-            cam_right_wrist_mask = cam_high_mask.copy()
+
+            # `cam_high` is the external camera image
+            cam_high = parse_img('agentview_rgb')
+            cam_high_mask = cam_high_mask if cam_high.shape[1] > 0 else np.zeros(
+                self.IMG_HISORY_SIZE, dtype=bool)
+
+            # Left wrist camera is not available in LIBERO
+            cam_left_wrist = np.zeros((self.IMG_HISORY_SIZE, 0, 0, 0))
+            cam_left_wrist_mask = np.zeros(self.IMG_HISORY_SIZE, dtype=bool)
+
+            # Right wrist camera (eye-in-hand)
+            cam_right_wrist = parse_img('eye_in_hand_rgb')
+            cam_right_wrist_mask = cam_high_mask.copy(
+            ) if cam_right_wrist.shape[1] > 0 else np.zeros(self.IMG_HISORY_SIZE, dtype=bool)
 
             # Return the resulting sample
             # For unavailable images, return zero-shape arrays, i.e., (IMG_HISORY_SIZE, 0, 0, 0)
@@ -289,7 +305,15 @@ class HDF5VLADataset:
                 } or None if the episode is invalid.
         """
         with h5py.File(file_path, 'r') as f:
-            qpos = f['observations']['qpos'][:]
+            # LIBERO dataset structure: data/demo_X/
+            demo_keys = list(f['data'].keys())
+            demo_key = np.random.choice(demo_keys)
+            demo = f['data'][demo_key]
+            joint_states = demo['obs']['joint_states'][:]
+            gripper_states = demo['obs']['gripper_states'][:]
+            actions = demo['actions'][:]
+            # Concatenate joint states and gripper states 7DoF+2gripper
+            qpos = np.concatenate([joint_states, gripper_states], axis=1)
             num_steps = qpos.shape[0]
             # [Optional] We drop too-short episode
             if num_steps < 128:
@@ -305,20 +329,13 @@ class HDF5VLADataset:
             else:
                 raise ValueError("Found no qpos that exceeds the threshold.")
 
-            # Rescale gripper to [0, 1]
-            qpos = qpos / np.array(
-                [[1, 1, 1, 1, 1, 1, 4.7908, 1, 1, 1, 1, 1, 1, 4.7888]]
-            )
-
-            # Max-min normalization for the last two dimensions
+            # Max-min normalization for the gripper states
             qpos_min = -0.04245
             qpos_max = 0.05185
             qpos[..., -2:] = (qpos[..., -2:] - qpos_min) / \
                 (qpos_max - qpos_min)
 
-            target_qpos = f['action'][:] / np.array(
-                [[1, 1, 1, 1, 1, 1, 11.8997, 1, 1, 1, 1, 1, 1, 13.9231]]
-            )
+            target_qpos = actions
 
             # Parse the state and action
             state = qpos[first_idx-1:]
@@ -327,21 +344,33 @@ class HDF5VLADataset:
             # Fill the state/action into the unified vector
             def fill_in_state(values):
                 # Target indices corresponding to your state space
-                # In this example: 6 joints + 1 gripper for each arm
+                # In this example: 7 joints + 2 gripper for each arm
                 UNI_STATE_INDICES = [
-                    STATE_VEC_IDX_MAPPING[f"left_arm_joint_{i}_pos"] for i in range(6)
+                    STATE_VEC_IDX_MAPPING[f"arm_joint_{i}_pos"] for i in range(7)
                 ] + [
-                    STATE_VEC_IDX_MAPPING["left_gripper_open"]
-                ] + [
-                    STATE_VEC_IDX_MAPPING[f"right_arm_joint_{i}_pos"] for i in range(6)
-                ] + [
-                    STATE_VEC_IDX_MAPPING["right_gripper_open"]
+                    STATE_VEC_IDX_MAPPING[f"gripper_joint_{i}_pos"] for i in range(2)
                 ]
                 uni_vec = np.zeros(values.shape[:-1] + (self.STATE_DIM,))
                 uni_vec[..., UNI_STATE_INDICES] = values
                 return uni_vec
+
+            def fill_in_action(values):
+                UNI_ACTION_INDICES = [
+                    STATE_VEC_IDX_MAPPING["eef_vel_x"],
+                    STATE_VEC_IDX_MAPPING["eef_vel_y"],
+                    STATE_VEC_IDX_MAPPING["eef_vel_z"],
+                    STATE_VEC_IDX_MAPPING["eef_angular_vel_roll"],
+                    STATE_VEC_IDX_MAPPING["eef_angular_vel_pitch"],
+                    STATE_VEC_IDX_MAPPING["eef_angular_vel_yaw"],
+                ] + [
+                    STATE_VEC_IDX_MAPPING["gripper_open_vel"]
+                ]
+                uni_vec = np.zeros(values.shape[:-1] + (self.STATE_DIM,))
+                uni_vec[..., UNI_ACTION_INDICES] = values
+                return uni_vec
+
             state = fill_in_state(state)
-            action = fill_in_state(action)
+            action = fill_in_action(action)
 
             # Return the resulting sample
             return True, {
