@@ -1,3 +1,4 @@
+export run_id=$(date +%Y%m%d_%H%M%S)
 export NCCL_IB_HCA=mlx5_0:1,mlx5_1:1,mlx5_2:1,mlx5_3:1,mlx5_4:1,mlx5_7:1,mlx5_8:1,mlx5_9:1
 export NCCL_IB_DISABLE=0
 export NCCL_SOCKET_IFNAME=bond0
@@ -6,12 +7,13 @@ export NCCL_NVLS_ENABLE=0
 
 export TEXT_ENCODER_NAME="google/t5-v1_1-xxl"
 export VISION_ENCODER_NAME="google/siglip-so400m-patch14-384"
-export OUTPUT_DIR="./checkpoints/rdt-finetune-1b"
+BASE_OUTPUT_DIR="./checkpoints/rdt-finetune-1b"
+export OUTPUT_DIR="${BASE_OUTPUT_DIR}-${run_id}" # 加入run_id作为后缀
 export CFLAGS="-I/usr/include"
 export LDFLAGS="-L/usr/lib/x86_64-linux-gnu"
 export CUTLASS_PATH="/path/to/cutlass"
 
-export WANDB_PROJECT="robotics_diffusion_transformer"
+export WANDB_PROJECT="rdt_libero_finetune_csq"
 
 if [ ! -d "$OUTPUT_DIR" ]; then
     mkdir "$OUTPUT_DIR"
@@ -23,7 +25,10 @@ fi
 # For run in a single node/machine
 # accelerate launch main.py \
 #     --deepspeed="./configs/zero2.json" \
-#     ...
+#     test
+#    --max_train_steps=200000 \
+#    --checkpointing_period=10000 \
+#    --sample_period=500 \
 
 deepspeed --hostfile=hostfile.txt main.py \
     --deepspeed="./configs/zero2.json" \
@@ -33,9 +38,9 @@ deepspeed --hostfile=hostfile.txt main.py \
     --output_dir=$OUTPUT_DIR \
     --train_batch_size=32 \
     --sample_batch_size=64 \
-    --max_train_steps=200000 \
-    --checkpointing_period=1000 \
-    --sample_period=500 \
+    --max_train_steps=200 \
+    --checkpointing_period=200 \
+    --sample_period=100 \
     --checkpoints_total_limit=40 \
     --lr_scheduler="constant" \
     --learning_rate=1e-4 \

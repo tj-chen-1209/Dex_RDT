@@ -174,8 +174,49 @@ class HDF5VLADataset:
             # We randomly sample a timestep TODO
             step_id = np.random.randint(first_idx-1, num_steps)
 
-            # TODO: add instruction
+            # TODO: add instruction 这个地方要跟 eval 对齐
+            def extract_instruction(file_path):
+                """
+                从 HDF5 文件名中提取任务指令
+                
+                Args:
+                    file_path: HDF5 文件路径，例如：
+                        "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it_demo.hdf5"
+                        "pick_up_the_black_bowl_and_place_it_on_the_plate_demo.hdf5"
+                
+                Returns:
+                    str: 提取的指令，例如：
+                        "turn on the stove and put the moka pot on it"
+                        "pick up the black bowl and place it on the plate"
+                """
+                # 获取文件名（不含路径和扩展名）
+                task_name = os.path.basename(file_path).replace('_demo.hdf5', '')
+                 # 如果文件名以大写字母开头（如 KITCHEN_SCENE3_...）
+                if task_name and task_name[0].isupper():
+                    # 查找 SCENE 的位置
+                    scene_pos = task_name.find("SCENE")
+                    if scene_pos != -1:
+                        # 检查是否是 SCENE10（需要跳过 8 个字符：SCENE10_）
+                        if "SCENE10" in task_name:
+                            # 从 SCENE10_ 之后开始提取
+                            language_part = task_name[scene_pos + 8:]
+                        else:
+                            # 从 SCENE#_ 之后开始提取（跳过 7 个字符：SCENE + 数字 + _）
+                            # 例如：SCENE3_ -> 跳过 7 个字符
+                            language_part = task_name[scene_pos + 7:]
+                        
+                        # 将下划线替换为空格
+                        instruction = language_part.replace('_', ' ')
+                    else:
+                        # 没有找到 SCENE，直接替换所有下划线
+                        instruction = task_name.replace('_', ' ')
+                else:
+                    # 文件名不以大写字母开头，直接替换所有下划线
+                    instruction = task_name.replace('_', ' ')
+                
+                return instruction.strip()
             # Load the instruction
+            instruction = extract_instruction(file_path)
             '''
             dir_path = os.path.dirname(file_path)
             with open(os.path.join(dir_path, 'expanded_instruction_gpt-4-turbo.json'), 'r') as f_instr:
@@ -189,17 +230,7 @@ class HDF5VLADataset:
             if isinstance(instruction, list):
                 instruction = np.random.choice(instruction)
             '''
-            # Extract instruction from filename
-            # Example: "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it_demo.hdf5"
-            # -> "turn on the stove and put the moka pot on it"
-            task_name = os.path.basename(file_path).replace('_demo.hdf5', '')
-            parts = task_name.split('_')
-            # Find where the actual task description starts (after SCENE#)
-            instruction = task_name.replace('_', ' ')
-            for i, part in enumerate(parts):
-                if part.startswith('SCENE') or part.startswith('scene'):
-                    instruction = ' '.join(parts[i+1:])
-                    break
+
             # You can also use precomputed language embeddings (recommended)
             # instruction = "path/to/lang_embed.pt"
 
@@ -262,14 +293,14 @@ class HDF5VLADataset:
                     STATE_VEC_IDX_MAPPING["eef_angular_vel_pitch"],
                     STATE_VEC_IDX_MAPPING["eef_angular_vel_yaw"],
                 ] + [
-                    STATE_VEC_IDX_MAPPING["gripper_open"]  # TODO
+                    STATE_VEC_IDX_MAPPING["gripper_open"]
                 ]
                 uni_vec = np.zeros(values.shape[:-1] + (self.STATE_DIM,))
                 uni_vec[..., UNI_ACTION_INDICES] = values
                 return uni_vec
             actions = fill_in_action(actions)
 
-            # Parse the images libero的图片是numpy数组, TODO:对比原始数据集的图片格式
+            # Parse the images libero的图片是numpy数组
             def parse_img(key):
                 # Check if the key exists in the demo
                 if key not in demo['obs']:
