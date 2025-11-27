@@ -57,7 +57,7 @@ deepspeed --exclude="localhost:0" main_sft.py \
     --dataset_type="finetune" \
     --state_noise_snr=40 \
     --load_from_hdf5 \
-    --report_to=wandb \
+    --report_to=tensorboard \
     --precomp_lang_embed
     # Use this to resume training from some previous checkpoint
     # --resume_from_checkpoint="checkpoint-36000" \

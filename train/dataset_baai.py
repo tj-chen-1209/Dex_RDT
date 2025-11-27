@@ -287,7 +287,6 @@ class VLAConsumerDataset(Dataset):
                         res['cam_high'], res['cam_high_mask'],
                         res['cam_right_wrist'], res['cam_right_wrist_mask'],
                         res['cam_left_wrist'], res['cam_left_wrist_mask'],
-                        res['cam_third_view'], res['cam_third_view_mask'],
                     ]
                     state_std = res['state_std']
                     state_mean = res['state_mean']

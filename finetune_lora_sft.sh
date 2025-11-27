@@ -15,7 +15,7 @@ BASE_OUTPUT_DIR="./checkpoints/rdt-finetune-1b"
 export CFLAGS="-I/usr/include"
 export LDFLAGS="-L/usr/lib/x86_64-linux-gnu"
 # export CUTLASS_PATH="/path/to/cutlass"
-dataset_name="libero_10"
+dataset_name="libero_object"
 BASE_OUTPUT_DIR="./checkpoints/${WANDB_PROJECT}-${dataset_name}"
 export WANDB_PROJECT="rdt_libero_sft_lora_csq"
 
@@ -38,10 +38,10 @@ if [ ! -d "$LORA_OUTPUT_DIR" ]; then
 fi
 
 # pretrained_path 要改成 base
+# --pretrained_model_name_or_path="./checkpoints/rdt-1b" \
 # deepspeed main.py \
 deepspeed --exclude="localhost:0" main_sft.py \
     --deepspeed="./configs/zero2.json" \
-    --pretrained_model_name_or_path="./checkpoints/rdt-1b" \
     --pretrained_text_encoder_name_or_path=$TEXT_ENCODER_NAME \
     --pretrained_vision_encoder_name_or_path=$VISION_ENCODER_NAME \
     --output_dir=$LORA_OUTPUT_DIR \
@@ -50,8 +50,9 @@ deepspeed --exclude="localhost:0" main_sft.py \
     --lora_alpha=64 \
     --lora_dropout=0.1 \
     --lora_target_modules="all" \
-    --train_batch_size=64 \
-    --sample_batch_size=128 \
+    --train_batch_size=32 \
+    --sample_batch_size=32 \
+    --num_sample_batches=4 \
     --max_train_steps=200000 \
     --checkpointing_period=5000 \
     --sample_period=500 \
@@ -64,7 +65,6 @@ deepspeed --exclude="localhost:0" main_sft.py \
     --dataset_type="finetune" \
     --state_noise_snr=40 \
     --load_from_hdf5 \
-    --report_to=wandb \
-    --use_8bit_adam \
+    --report_to=tensorboard \
     --precomp_lang_embed  # 使用预先计算的语言嵌入（如果有的话）
 

@@ -7,7 +7,7 @@ import yaml
 import numpy as np
 from PIL import Image
 import torch
-
+from configs.state_vec import STATE_VEC_IDX_MAPPING
 
 class BsonDexDataset:
     """
@@ -157,8 +157,8 @@ class BsonDexDataset:
 
         # xhand obs from degree to radian !!!!!!!!!!!!!!!!!!
         for i in range(frame_num):
-            xhand_data['frames'][i]["observation"]["left_hand"] = np.deg2rad(xhand_data['frames'][i]["observation"]["left_hand"])
             xhand_data['frames'][i]["observation"]["right_hand"] = np.deg2rad(xhand_data['frames'][i]["observation"]["right_hand"])
+            xhand_data['frames'][i]["observation"]["left_hand"] = np.deg2rad(xhand_data['frames'][i]["observation"]["left_hand"])
         
         # Check if action data has correct length (6) for arms
         use_arm_actions = True
@@ -175,10 +175,11 @@ class BsonDexDataset:
 
         for i in range(frame_num):
             state[i, :] = np.concatenate([
-                arm_data[keys["left_obs_arm"]][i]["data"]["pos"],
-                xhand_data['frames'][i]["observation"]["left_hand"],
                 arm_data[keys["right_obs_arm"]][i]["data"]["pos"],
-                xhand_data['frames'][i]["observation"]["right_hand"]
+                xhand_data['frames'][i]["observation"]["right_hand"],
+                arm_data[keys["left_obs_arm"]][i]["data"]["pos"],
+                xhand_data['frames'][i]["observation"]["left_hand"]
+
             ])
             
             # Use action data if available and correct, otherwise use observation
@@ -190,10 +191,10 @@ class BsonDexDataset:
                 right_arm_data = arm_data[keys["right_obs_arm"]][i]["data"]["pos"]
             
             action[i, :] = np.concatenate([
-                left_arm_data,
-                xhand_data['frames'][i]["action"]["left_hand"],
                 right_arm_data,
-                xhand_data['frames'][i]["action"]["right_hand"]
+                xhand_data['frames'][i]["action"]["right_hand"],
+                left_arm_data,
+                xhand_data['frames'][i]["action"]["left_hand"]
             ])
 
         # Prepare image path information (lazy loading - do NOT load actual images)
@@ -391,6 +392,22 @@ class BsonDexDataset:
             "instruction": instruction
         }
 
+        def fill_in_state(values):
+            # Target indices corresponding to your state space
+            # In this example: 6 arm_joint_state + 12 hand_state
+            UNI_STATE_INDICES = [
+                STATE_VEC_IDX_MAPPING[f"right_arm_joint_{i}_pos"] for i in range(6)
+            ] + [
+                STATE_VEC_IDX_MAPPING[f"right_hand_joint_{i}_pos"] for i in range(12)
+            ] + [
+                STATE_VEC_IDX_MAPPING[f"left_arm_joint_{i}_pos"] for i in range(6)
+            ] + [
+                STATE_VEC_IDX_MAPPING[f"left_hand_joint_{i}_pos"] for i in range(12)
+            ]   
+            uni_vec = np.zeros(values.shape[:-1] + (self.STATE_DIM,))
+            uni_vec[..., UNI_STATE_INDICES] = values
+            return uni_vec
+
         target_qpos = episode_data["action"][step_id:step_id+self.CHUNK_SIZE]
         state = qpos[step_id:step_id+1]
         state_std = np.std(qpos, axis=0)
@@ -405,6 +422,16 @@ class BsonDexDataset:
                 np.tile(actions[-1:],
                         (self.CHUNK_SIZE-actions.shape[0], 1))
             ], axis=0)
+
+        # Fill the state into the unified vector
+        state = fill_in_state(state)
+        state_std = fill_in_state(state_std)
+        state_mean = fill_in_state(state_mean)
+        state_norm = fill_in_state(state_norm)
+        # Fill the actions into the unified vector
+        actions = fill_in_state(actions)
+        # Fill the state_indicator into the unified vector
+        state_indicator = fill_in_state(state_indicator)
 
         ### 到这里运动规划结束，接下来是图片解析（懒加载）
         
@@ -440,7 +467,7 @@ class BsonDexDataset:
         print("cam_high.shape: ", cam_high.shape)
         cam_left_wrist = parse_img('camera_left_wrist')
         cam_right_wrist = parse_img('camera_right_wrist')
-        cam_third_view = parse_img('camera_third_view')
+        # cam_third_view = parse_img('camera_third_view')
 
         # Create masks - valid_len indicates how many frames are real (not padded)
         valid_len = min(step_id - (first_idx - 1) + 1, self.IMG_HISORY_SIZE)
@@ -479,8 +506,8 @@ class BsonDexDataset:
             "cam_left_wrist_mask": cam_mask.copy(),
             "cam_right_wrist": cam_right_wrist,
             "cam_right_wrist_mask": cam_mask.copy(),
-            "cam_third_view": cam_third_view,
-            "cam_third_view_mask": cam_mask.copy(),
+            # "cam_third_view": cam_third_view,
+            # "cam_third_view_mask": cam_mask.copy(),
         }
 
     def parse_bson_episode_state_only(self, episode_path):

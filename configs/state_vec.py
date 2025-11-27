@@ -110,5 +110,13 @@ STATE_VEC_IDX_MAPPING = {
     # [102, 103): base angular velocities
     'base_angular_vel': 102,
     # [103, 128): reserved
+    # [103, 115): right hand positions
+    **{
+        'right_hand_joint_{}_pos'.format(i): i + 103 for i in range(12)
+    },
+    # [115, 128): left hand positions
+    **{
+        'left_hand_joint_{}_pos'.format(i): i + 115 for i in range(12)
+    },
 }
 STATE_VEC_LEN = 128
