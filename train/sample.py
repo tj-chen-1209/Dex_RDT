@@ -33,7 +33,7 @@ def log_sample_res(
             
         batch_size, _, C, H, W = images.shape
         image_embeds = vision_encoder(images.reshape(-1, C, H, W)).detach()
-        image_embeds = image_embeds.reshape((batch_size, -1, vision_encoder.hidden_size))
+        image_embeds = image_embeds.reshape((batch_size, -1, vision_encoder.hidden_size)).to(dtype=weight_dtype)
         
         lang_attn_mask = batch["lang_attn_mask"]
         text_embeds = batch["lang_embeds"].to(dtype=weight_dtype) \

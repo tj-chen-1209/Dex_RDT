@@ -152,7 +152,35 @@ def train(args, logger):
         and not os.path.isfile(args.pretrained_model_name_or_path)
     ):
         logger.info("Constructing model from pretrained checkpoint.")
-        rdt = RDTRunner.from_pretrained(args.pretrained_model_name_or_path)
+        
+        # 读取预训练模型的配置
+        import json
+        config_path = os.path.join(args.pretrained_model_name_or_path, "config.json")
+        logger.info(f"Loading config from {config_path}")
+        with open(config_path, 'r') as f:
+            model_config = json.load(f)
+        
+        # 使用配置初始化模型
+        rdt = RDTRunner(
+            action_dim=model_config["action_dim"],
+            pred_horizon=model_config["pred_horizon"],
+            config=model_config,
+            lang_token_dim=model_config["lang_token_dim"],
+            img_token_dim=model_config["img_token_dim"],
+            state_token_dim=model_config["state_token_dim"],
+            max_lang_cond_len=model_config["max_lang_cond_len"],
+            img_cond_len=model_config["img_cond_len"],
+            img_pos_embed_config=model_config.get("img_pos_embed_config", []),
+            lang_pos_embed_config=model_config.get("lang_pos_embed_config", []),
+            dtype=weight_dtype,
+        )
+        
+        # 加载预训练权重
+        checkpoint_path = os.path.join(args.pretrained_model_name_or_path, "pytorch_model.bin")
+        logger.info(f"Loading weights from {checkpoint_path}")
+        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        rdt.load_state_dict(checkpoint, strict=False)
+        logger.info("✅ Pretrained weights loaded successfully")
         
         # 应用 LoRA (如果启用)
         if args.use_lora:
@@ -164,7 +192,9 @@ def train(args, logger):
                     "attn.qkv", "attn.proj",           # 自注意力
                     "cross_attn.q", "cross_attn.kv", "cross_attn.proj",  # 交叉注意力
                     "ffn.fc1", "ffn.fc2",               # FFN
-                    "lang_adaptor","img_adaptor","state_adaptor" # 条件适配器
+                    "lang_adaptor.0","lang_adaptor.2",
+                    "img_adaptor.0","img_adaptor.2",
+                    "state_adaptor.0","state_adaptor.2","state_adaptor.4" # 条件适配器
                 ]
             
             lora_config = LoraConfig(

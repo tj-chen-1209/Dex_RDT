@@ -58,7 +58,7 @@ else
     echo "LoRA output folder '$LORA_OUTPUT_DIR' already exists"
 fi
 
-deepspeed main_baai_lora.py \
+deepspeed --exclude="localhost:0" main_baai_lora.py \
     --deepspeed="./configs/zero2.json" \
     --pretrained_model_name_or_path="./checkpoints/rdt-1b" \
     --pretrained_text_encoder_name_or_path=$TEXT_ENCODER_NAME \

@@ -464,7 +464,7 @@ class BsonDexDataset:
         
         # Load images from all 4 cameras
         cam_high = parse_img('camera_head')  # Head camera -> cam_high
-        print("cam_high.shape: ", cam_high.shape)
+        # print("cam_high.shape: ", cam_high.shape)
         cam_left_wrist = parse_img('camera_left_wrist')
         cam_right_wrist = parse_img('camera_right_wrist')
         # cam_third_view = parse_img('camera_third_view')
@@ -549,6 +549,26 @@ class BsonDexDataset:
         # Return full trajectory from first moving frame
         state_traj = qpos[first_idx-1:]
         action_traj = actions[first_idx-1:]
+
+        # 添加这个函数来填充到128维
+        def fill_in_state(values):
+            # Target indices corresponding to your state space
+            UNI_STATE_INDICES = [
+                STATE_VEC_IDX_MAPPING[f"right_arm_joint_{i}_pos"] for i in range(6)
+            ] + [
+                STATE_VEC_IDX_MAPPING[f"right_hand_joint_{i}_pos"] for i in range(12)
+            ] + [
+                STATE_VEC_IDX_MAPPING[f"left_arm_joint_{i}_pos"] for i in range(6)
+            ] + [
+                STATE_VEC_IDX_MAPPING[f"left_hand_joint_{i}_pos"] for i in range(12)
+            ]   
+            uni_vec = np.zeros(values.shape[:-1] + (self.STATE_DIM,))
+            uni_vec[..., UNI_STATE_INDICES] = values
+            return uni_vec
+
+        # 填充state和action到128维
+        state_traj = fill_in_state(state_traj)
+        action_traj = fill_in_state(action_traj)
 
         return True, {
             "state": state_traj,
