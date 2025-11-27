@@ -10,7 +10,7 @@ import argparse
 from collections import deque
 from PIL import Image
 
-LIBERO_REPO_ROOT = "/home/zhukefei/chensiqi/LIBERO"
+LIBERO_REPO_ROOT = "/home/chensiqi/chensiqi/libero_with_rdt"
 
 if LIBERO_REPO_ROOT not in sys.path:
     sys.path.insert(0, LIBERO_REPO_ROOT)
@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument("--num-traj", type=int, default=25, help="Number of trajectories to test")
     parser.add_argument("--pretrained-path", type=str, required=True, help="Path to pretrained model")
     parser.add_argument("--dataset-name", type=str, default="libero_10", 
-                        choices=["libero_10", "libero_90"], help="Dataset name")
+                        choices=["libero_10", "libero_90", "libero_object", "libero_spatial", "libero_goal"], help="Dataset name")
     # 添加视频参数
     parser.add_argument("--save-videos", action="store_true", help="Save evaluation videos")
     parser.add_argument("--video-dir", type=str, default="outs/videos", help="Directory to save videos")

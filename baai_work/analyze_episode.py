@@ -1,90 +1,5 @@
 #!/usr/bin/env python3
 """
-详细分析两个BSON文件的关系和内容
-运行: conda activate rdt && python analyze_full_episode.py
-"""
-import os
-from bson import decode_all
-import numpy as np
-import matplotlib.pyplot as plt
-
-episode_dir = "/home/chensiqi/chensiqi/RDT_libero_finetune/data/baai/data/action176/episode_0"
-episode_dir_1 = "/home/chensiqi/chensiqi/RDT_libero_finetune/data/baai/data/action176/episode_99"
-
-# 2. 分析 episode_0.bson
-print("\n" + "=" * 80)
-print("1. episode_0.bson 分析")
-print("=" * 80)
-print(episode_dir)
-with open(os.path.join(episode_dir, "episode_0.bson"), "rb") as f:
-    episode_docs = decode_all(f.read())
-
-ep_doc = episode_docs[0]
-print(f"顶层Keys: {list(ep_doc.keys())}")
-
-if "id" in ep_doc:
-    print(f"ID: {ep_doc['id']}")
-
-if "timestamp" in ep_doc:
-    print(f"Timestamp: {ep_doc['timestamp']}")
-
-if "metadata" in ep_doc:
-    print(f"\nMetadata:")
-    for key, value in ep_doc["metadata"].items():
-        print(f"  {key}: {value}")
-
-if "data" in ep_doc:
-    print(f"\nData keys: {list(ep_doc['data'].keys())}")
-    data = ep_doc['data']
-    
-    # for key in data.keys():
-    #     value = data[key]
-    #     if isinstance(value, list):
-    #         print(f"  {key}: list of {len(value)} items")
-    #         if len(value) > 0:
-    #             print(f"    第一个元素类型: {type(value[0])}")
-    #             if isinstance(value[0], dict):
-    #                 print(f"    第一个元素的keys: {list(value[0].keys())}")
-    #     else:
-    #         print(f"  {key}: {type(value).__name__}")
-
-print("\n" + "=" * 80)
-print("2. episode_99.bson 分析")
-print("=" * 80)
-print(episode_dir_1)
-with open(os.path.join(episode_dir_1, "episode_0.bson"), "rb") as f:
-    episode_docs = decode_all(f.read())
-
-ep_doc = episode_docs[0]
-print(f"顶层Keys: {list(ep_doc.keys())}")
-
-if "id" in ep_doc:
-    print(f"ID: {ep_doc['id']}")
-
-if "timestamp" in ep_doc:
-    print(f"Timestamp: {ep_doc['timestamp']}")
-
-if "metadata" in ep_doc:
-    print(f"\nMetadata:")
-    for key, value in ep_doc["metadata"].items():
-        print(f"  {key}: {value}")
-
-if "data" in ep_doc:
-    print(f"\nData keys: {list(ep_doc['data'].keys())}")
-    data = ep_doc['data']
-    
-    # for key in data.keys():
-    #     value = data[key]
-    #     if isinstance(value, list):
-    #         print(f"  {key}: list of {len(value)} items")
-    #         if len(value) > 0:
-    #             print(f"    第一个元素类型: {type(value[0])}")
-    #             if isinstance(value[0], dict):
-    #                 print(f"    第一个元素的keys: {list(value[0].keys())}")
-    #     else:
-    #         print(f"  {key}: {type(value).__name__}")
-#!/usr/bin/env python3
-"""
 高级数据集分析 - 深入探索episode的特征和模式
 运行: conda activate rdt && python advanced_episode_analysis.py
 """
@@ -141,12 +56,12 @@ right_actions = np.array([f['action']['right_hand'] for f in frames])
 all_actions = np.concatenate([left_actions, right_actions], axis=1)
 
 print(f"Action维度: 左手{left_actions.shape[1]}维 + 右手{right_actions.shape[1]}维 = 总共{all_actions.shape[1]}维")
-print(f"\n左手Action范围:")
+print(f"\n左手Action统计:")
 for i in range(left_actions.shape[1]):
     print(f"  维度{i:2d}: [{left_actions[:, i].min():8.4f}, {left_actions[:, i].max():8.4f}] "
           )
 
-print(f"\n右手Action范围:")
+print(f"\n右手Action统计:")
 for i in range(right_actions.shape[1]):
     print(f"  维度{i:2d}: [{right_actions[:, i].min():8.4f}, {right_actions[:, i].max():8.4f}] "
           )
@@ -163,12 +78,12 @@ left_obs = np.array([f['observation']['left_hand'] for f in frames])
 right_obs = np.array([f['observation']['right_hand'] for f in frames])
 
 print(f"Observation维度: 左手{left_obs.shape[1]}维 + 右手{right_obs.shape[1]}维")
-print(f"\n左手Observation范围:")
+print(f"\n左手Observation统计:")
 for i in range(left_obs.shape[1]):
     print(f"  维度{i:2d}: [{left_obs[:, i].min():8.4f}, {left_obs[:, i].max():8.4f}] "
           )
 
-print(f"\n右手Observation范围:")
+print(f"\n右手Observation统计:")
 for i in range(right_obs.shape[1]):
     print(f"  维度{i:2d}: [{right_obs[:, i].min():8.4f}, {right_obs[:, i].max():8.4f}] "
           )
@@ -198,3 +113,4 @@ for cam_view in camera_views:
             print(f"  图像数量: {image_info[cam_view]['count']}")
             print(f"  分辨率: {image_info[cam_view]['resolution']}")
             print(f"  帧范围: {image_info[cam_view]['first_frame']} - {image_info[cam_view]['last_frame']}")
+

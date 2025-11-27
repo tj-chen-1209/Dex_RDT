@@ -9,8 +9,8 @@ export DS_BUILD_EVOFORMER_ATTN=0
 # export CUDA_VISIBLE_DEVICES=0
 export TEXT_ENCODER_NAME="google/t5-v1_1-xxl"
 export VISION_ENCODER_NAME="google/siglip-so400m-patch14-384"
-dataset_name="libero_spatial"
-RESUME_CHECKPOINT_SRC="./checkpoints/rdt-finetune-1b-20251119_122234/checkpoint-65000"
+dataset_name="libero_object"
+PRETRAINED_MODEL_PATH="./checkpoints/rdt-finetune-1b-20251119_122234/checkpoint-65000"
 
 export WANDB_PROJECT="rdt_libero_sft_csq"
 BASE_OUTPUT_DIR="./checkpoints/rdt-${WANDB_PROJECT}-${dataset_name}"
@@ -19,28 +19,11 @@ export CFLAGS="-I/usr/include"
 export LDFLAGS="-L/usr/lib/x86_64-linux-gnu"
 # export CUTLASS_PATH="/path/to/cutlass"
 
-
-
 if [ ! -d "$OUTPUT_DIR" ]; then
     mkdir "$OUTPUT_DIR"
     echo "Folder '$OUTPUT_DIR' created"
 else
     echo "Folder '$OUTPUT_DIR' already exists"
-fi
-
-RESUME_ARG=""
-if [ -n "$RESUME_CHECKPOINT_SRC" ]; then
-    if [ ! -d "$RESUME_CHECKPOINT_SRC" ]; then
-        echo "指定的恢复路径 '$RESUME_CHECKPOINT_SRC' 不存在，终止执行。"
-        exit 1
-    fi
-    resume_basename=$(basename "$RESUME_CHECKPOINT_SRC")
-    if [ ! -d "$OUTPUT_DIR/$resume_basename" ]; then
-        echo "拷贝历史 checkpoint 到当前输出目录: $resume_basename"
-        rsync -a "$RESUME_CHECKPOINT_SRC" "$OUTPUT_DIR/"
-    fi
-    resume_abs_path=$(realpath "$OUTPUT_DIR/$resume_basename")
-    RESUME_ARG="--pretrained_model_name_or_path=$resume_abs_path"
 fi
 
 # For run in a single node/machine
@@ -50,20 +33,18 @@ fi
 #    --max_train_steps=200000 \
 #    --checkpointing_period=10000 \
 #    --sample_period=500 \
-# --pretrained_model_name_or_path="./checkpoints/rdt-1b" \
 
-
-    # --pretrained_model_name_or_path="./checkpoints/rdt-1b" \
-# --use_8bit_adam \
 # deepspeed main.py \
 # deepspeed --hostfile=hostfile.txt main_sft.py \
 deepspeed --exclude="localhost:0" main_sft.py \
     --deepspeed="./configs/zero2.json" \
+    --pretrained_model_name_or_path=$PRETRAINED_MODEL_PATH \
     --pretrained_text_encoder_name_or_path=$TEXT_ENCODER_NAME \
     --pretrained_vision_encoder_name_or_path=$VISION_ENCODER_NAME \
     --output_dir=$OUTPUT_DIR \
     --train_batch_size=32 \
-    --sample_batch_size=64 \
+    --sample_batch_size=32 \
+    --num_sample_batches=4 \
     --max_train_steps=200000 \
     --checkpointing_period=5000 \
     --sample_period=500 \
@@ -77,8 +58,7 @@ deepspeed --exclude="localhost:0" main_sft.py \
     --state_noise_snr=40 \
     --load_from_hdf5 \
     --report_to=wandb \
-    --precomp_lang_embed \
-    $RESUME_ARG
+    --precomp_lang_embed
     # Use this to resume training from some previous checkpoint
     # --resume_from_checkpoint="checkpoint-36000" \
     # Use this to load from saved lanuage instruction embeddings,
@@ -105,7 +85,7 @@ deepspeed --exclude="localhost:0" main_sft.py \
 # 
 # deepspeed --exclude="localhost:0" main.py \
 #     --deepspeed="./configs/zero2.json" \
-#     --pretrained_model_name_or_path="./checkpoints/rdt-1b" \
+#     --pretrained_model_name_or_path=$PRETRAINED_MODEL_PATH \
 #     --pretrained_text_encoder_name_or_path=$TEXT_ENCODER_NAME \
 #     --pretrained_vision_encoder_name_or_path=$VISION_ENCODER_NAME \
 #     --output_dir=$LORA_OUTPUT_DIR \

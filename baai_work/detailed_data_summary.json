@@ -1,0 +1,152 @@
+{
+  "dataset": "action176",
+  "episode": "episode_0",
+  "image_data": {
+    "cameras": [
+      "camera_head",
+      "camera_left_wrist",
+      "camera_right_wrist",
+      "camera_third_view"
+    ],
+    "num_cameras": 4,
+    "frames_per_camera": 452,
+    "total_images": 1808,
+    "format": "JPEG",
+    "resolution": {
+      "width": 640,
+      "height": 480
+    },
+    "color_mode": "RGB",
+    "channels": 3,
+    "dtype": "uint8",
+    "pixel_range": [
+      0,
+      255
+    ],
+    "array_shape": [
+      480,
+      640,
+      3
+    ],
+    "shape_description": "height × width × channels",
+    "avg_file_size_kb": 84,
+    "memory_per_image_kb": 921.6
+  },
+  "episode_bson": {
+    "file": "episode_0.bson",
+    "size_mb": 0.59,
+    "num_topics": 10,
+    "data_points_per_topic": 452,
+    "sampling_rate_hz": 19.82,
+    "duration_seconds": 22.76,
+    "topics": {
+      "poses": {
+        "/observation/left_arm/pose": {
+          "translation": {
+            "dims": 3,
+            "description": "[x, y, z]"
+          },
+          "rotation": {
+            "dims": 4,
+            "description": "[qx, qy, qz, qw] quaternion"
+          }
+        },
+        "/observation/right_arm/pose": {
+          "translation": {
+            "dims": 3,
+            "description": "[x, y, z]"
+          },
+          "rotation": {
+            "dims": 4,
+            "description": "[qx, qy, qz, qw] quaternion"
+          }
+        }
+      },
+      "joint_states": {
+        "left_arm": {
+          "dims": 6,
+          "fields": [
+            "pos",
+            "vel",
+            "eff"
+          ]
+        },
+        "right_arm": {
+          "dims": 6,
+          "fields": [
+            "pos",
+            "vel",
+            "eff"
+          ]
+        },
+        "head": {
+          "dims": 2,
+          "fields": [
+            "pos",
+            "vel",
+            "eff"
+          ]
+        },
+        "spine": {
+          "dims": 1,
+          "fields": [
+            "pos",
+            "vel",
+            "eff"
+          ]
+        }
+      }
+    }
+  },
+  "xhand_control_bson": {
+    "file": "xhand_control_data.bson",
+    "size_mb": 0.28,
+    "num_frames": 452,
+    "sampling_rate_hz": 19.87,
+    "duration_seconds": 22.75,
+    "data_structure": {
+      "action": {
+        "left_hand": {
+          "dims": 12,
+          "dtype": "float64",
+          "description": "12维灵巧手动作指令"
+        },
+        "right_hand": {
+          "dims": 12,
+          "dtype": "float64",
+          "description": "12维灵巧手动作指令"
+        }
+      },
+      "observation": {
+        "left_hand": {
+          "dims": 12,
+          "dtype": "float64",
+          "description": "12维灵巧手传感器观测"
+        },
+        "right_hand": {
+          "dims": 12,
+          "dtype": "float64",
+          "description": "12维灵巧手传感器观测"
+        }
+      }
+    },
+    "array_shapes": {
+      "action.left_hand": [
+        452,
+        12
+      ],
+      "action.right_hand": [
+        452,
+        12
+      ],
+      "observation.left_hand": [
+        452,
+        12
+      ],
+      "observation.right_hand": [
+        452,
+        12
+      ]
+    }
+  }
+}

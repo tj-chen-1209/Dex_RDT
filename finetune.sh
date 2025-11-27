@@ -9,13 +9,15 @@ export DS_BUILD_EVOFORMER_ATTN=0
 export CUDA_VISIBLE_DEVICES=0
 export TEXT_ENCODER_NAME="google/t5-v1_1-xxl"
 export VISION_ENCODER_NAME="google/siglip-so400m-patch14-384"
-BASE_OUTPUT_DIR="./checkpoints/rdt-finetune-1b"
-export OUTPUT_DIR="${BASE_OUTPUT_DIR}-${run_id}" # 加入run_id作为后缀
+dataset_name="libero_90"
+PRETRAINED_MODEL_PATH="./checkpoints/rdt-1b"
+
+export WANDB_PROJECT="rdt_libero_finetune_csq"
+BASE_OUTPUT_DIR="./checkpoints/rdt-${WANDB_PROJECT}-${dataset_name}"
+export OUTPUT_DIR="./checkpoints/rdt-${WANDB_PROJECT}-${dataset_name}-${run_id}" # 加入run_id作为后缀
 export CFLAGS="-I/usr/include"
 export LDFLAGS="-L/usr/lib/x86_64-linux-gnu"
 # export CUTLASS_PATH="/path/to/cutlass"
-
-export WANDB_PROJECT="rdt_libero_finetune_csq"
 
 if [ ! -d "$OUTPUT_DIR" ]; then
     mkdir "$OUTPUT_DIR"
@@ -35,7 +37,7 @@ fi
 # deepspeed --exclude="localhost:0" main.py \
 deepspeed main.py \
     --deepspeed="./configs/zero2.json" \
-    --pretrained_model_name_or_path="./checkpoints/rdt-1b" \
+    --pretrained_model_name_or_path=$PRETRAINED_MODEL_PATH \
     --pretrained_text_encoder_name_or_path=$TEXT_ENCODER_NAME \
     --pretrained_vision_encoder_name_or_path=$VISION_ENCODER_NAME \
     --output_dir=$OUTPUT_DIR \
@@ -83,7 +85,7 @@ deepspeed main.py \
 # 
 # deepspeed --exclude="localhost:0" main.py \
 #     --deepspeed="./configs/zero2.json" \
-#     --pretrained_model_name_or_path="./checkpoints/rdt-1b" \
+#     --pretrained_model_name_or_path=$PRETRAINED_MODEL_PATH \
 #     --pretrained_text_encoder_name_or_path=$TEXT_ENCODER_NAME \
 #     --pretrained_vision_encoder_name_or_path=$VISION_ENCODER_NAME \
 #     --output_dir=$LORA_OUTPUT_DIR \

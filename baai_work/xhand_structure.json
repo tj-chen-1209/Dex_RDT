@@ -1,0 +1,125 @@
+{
+  "file": "xhand_control_data.bson",
+  "total_frames": 452,
+  "structure": {
+    "top_level": {
+      "type": "dict",
+      "keys": [
+        "frames"
+      ]
+    },
+    "frames": {
+      "type": "list",
+      "length": 452,
+      "element_type": "dict"
+    },
+    "frame_structure": {
+      "keys": [
+        "t",
+        "action",
+        "observation"
+      ],
+      "t": {
+        "type": "float",
+        "description": "timestamp in seconds"
+      },
+      "action": {
+        "type": "dict",
+        "keys": [
+          "left_hand",
+          "right_hand"
+        ],
+        "left_hand": {
+          "type": "list",
+          "length": 12,
+          "dtype": "float64"
+        },
+        "right_hand": {
+          "type": "list",
+          "length": 12,
+          "dtype": "float64"
+        }
+      },
+      "observation": {
+        "type": "dict",
+        "keys": [
+          "left_hand",
+          "right_hand"
+        ],
+        "left_hand": {
+          "type": "list",
+          "length": 12,
+          "dtype": "float64"
+        },
+        "right_hand": {
+          "type": "list",
+          "length": 12,
+          "dtype": "float64"
+        }
+      }
+    }
+  },
+  "sample_frame": {
+    "t": 0.2000839050160721,
+    "action": {
+      "left_hand": [
+        0.3329027209281921,
+        1.3588594453811647,
+        0.005547930195927619,
+        0.05706075113415718,
+        0.013657755986787378,
+        0.004675589229166508,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0990701819896698
+      ],
+      "right_hand": [
+        0.5535446681976318,
+        1.4174476760864259,
+        0.021568830478191373,
+        0.0,
+        0.000766583930142224,
+        0.0006410610467195508,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.00044186223968863386
+      ]
+    },
+    "observation": {
+      "left_hand": [
+        20.74,
+        75.55,
+        6.41,
+        -0.57,
+        2.17,
+        33.57,
+        0.17,
+        1.25,
+        0.5,
+        0.58,
+        0.67,
+        6.91
+      ],
+      "right_hand": [
+        35.67,
+        77.16,
+        10.75,
+        -0.02,
+        1.42,
+        46.08,
+        2.08,
+        35.25,
+        0.58,
+        11.67,
+        1.08,
+        34.25
+      ]
+    }
+  }
+}

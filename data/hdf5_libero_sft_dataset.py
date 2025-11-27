@@ -19,8 +19,8 @@ class HDF5LiberoSFTDataset:
         # [Modify] The path to the HDF5 dataset directory
         # Each HDF5 file contains one episode 
         # TODO: change the dataset name
-        HDF5_DIR = "data/datasets/libero_spatial/"
-        self.DATASET_NAME = "libero_spatial"
+        HDF5_DIR = "data/datasets/libero_object/"
+        self.DATASET_NAME = "libero_object"
 
         self.file_paths = []
         for root, _, files in os.walk(HDF5_DIR):

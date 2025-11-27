@@ -66,5 +66,6 @@
     "libero_10": 20,
     "libero_goal": 20,
     "libero_object": 20,
-    "libero_spatial": 20
+    "libero_spatial": 20,
+    "baai_data": 20
 }

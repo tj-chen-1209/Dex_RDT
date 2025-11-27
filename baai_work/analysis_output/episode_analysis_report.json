@@ -1,0 +1,81 @@
+{
+  "episode_id": "episode_0",
+  "action_type": "action176",
+  "temporal_info": {
+    "total_frames": 452,
+    "duration_seconds": 22.750085443025455,
+    "control_frequency_hz": 19.868057248926537,
+    "avg_time_interval_ms": 50.44364843242895,
+    "time_interval_std_ms": 17.883607611837174
+  },
+  "action_space": {
+    "left_hand_dims": 12,
+    "right_hand_dims": 12,
+    "total_dims": 24,
+    "left_hand_range": [
+      0.0,
+      1.5094163477432125
+    ],
+    "right_hand_range": [
+      0.0,
+      1.940998544890867
+    ]
+  },
+  "observation_space": {
+    "left_hand_dims": 12,
+    "right_hand_dims": 12,
+    "left_hand_range": [
+      -3.0,
+      85.04
+    ],
+    "right_hand_range": [
+      -4.5,
+      112.41
+    ]
+  },
+  "motion_statistics": {
+    "moving_frames_ratio": 0.0,
+    "avg_velocity": NaN,
+    "max_velocity": NaN,
+    "avg_acceleration": NaN,
+    "max_acceleration": NaN
+  },
+  "visual_data": {
+    "camera_head": {
+      "count": 452,
+      "resolution": [
+        640,
+        480
+      ],
+      "first_frame": 4,
+      "last_frame": 455
+    },
+    "camera_left_wrist": {
+      "count": 452,
+      "resolution": [
+        640,
+        480
+      ],
+      "first_frame": 4,
+      "last_frame": 455
+    },
+    "camera_right_wrist": {
+      "count": 452,
+      "resolution": [
+        640,
+        480
+      ],
+      "first_frame": 4,
+      "last_frame": 455
+    },
+    "camera_third_view": {
+      "count": 452,
+      "resolution": [
+        640,
+        480
+      ],
+      "first_frame": 4,
+      "last_frame": 455
+    }
+  }
+}
