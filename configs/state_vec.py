@@ -114,7 +114,7 @@ STATE_VEC_IDX_MAPPING = {
     **{
         'right_hand_joint_{}_pos'.format(i): i + 103 for i in range(12)
     },
-    # [115, 128): left hand positions
+    # [115, 127): left hand positions
     **{
         'left_hand_joint_{}_pos'.format(i): i + 115 for i in range(12)
     },

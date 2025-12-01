@@ -17,7 +17,7 @@ model_type="lora"
 lora_r=32
 lora_alpha=64
 lr="1e-4"
-batch_size=32
+batch_size=48
 seed=42  # 添加固定种子
 
 # 生成清晰的输出路径（包含seed信息）
@@ -58,32 +58,34 @@ else
     echo "LoRA output folder '$LORA_OUTPUT_DIR' already exists"
 fi
 
-deepspeed --exclude="localhost:0" main_baai_lora.py \
+deepspeed --exclude="localhost:0" main_baai.py \
     --deepspeed="./configs/zero2.json" \
     --pretrained_model_name_or_path="./checkpoints/rdt-1b" \
     --pretrained_text_encoder_name_or_path=$TEXT_ENCODER_NAME \
     --pretrained_vision_encoder_name_or_path=$VISION_ENCODER_NAME \
     --output_dir=$LORA_OUTPUT_DIR \
-    --seed=${seed} \                    # 添加这一行！
-    --use_lora \
-    --lora_rank=${lora_r} \
-    --lora_alpha=${lora_alpha} \
-    --lora_dropout=0.1 \
-    --lora_target_modules="all" \
+    --seed=${seed} \
     --train_batch_size=${batch_size} \
     --sample_batch_size=${batch_size} \
     --num_sample_batches=4 \
     --max_train_steps=200000 \
-    --checkpointing_period=2500 \
+    --checkpointing_period=2000 \
     --sample_period=500 \
     --checkpoints_total_limit=40 \
     --lr_scheduler="constant" \
     --learning_rate=${lr} \
     --mixed_precision="bf16" \
-    --dataloader_num_workers=16 \
+    --dataloader_num_workers=8 \
     --image_aug \
     --dataset_type="finetune" \
     --state_noise_snr=40 \
     --load_from_bson \
     --report_to=tensorboard \
     --precomp_lang_embed
+
+
+    #     --use_lora \
+    # --lora_rank=${lora_r} \
+    # --lora_alpha=${lora_alpha} \
+    # --lora_dropout=0.1 \
+    # --lora_target_modules="all" \

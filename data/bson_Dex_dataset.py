@@ -45,9 +45,9 @@ class BsonDexDataset:
                 main_bson = os.path.join(episode_path, "episode_0.bson")
                 xhand_bson = os.path.join(episode_path, "xhand_control_data.bson")
                 if os.path.exists(main_bson) and os.path.exists(xhand_bson):
-                    # Check camera folders
+                    # Check camera folders 不要第三人称摄像头
                     required_cameras = ['camera_head', 'camera_left_wrist', 
-                                       'camera_right_wrist', 'camera_third_view']
+                                       'camera_right_wrist']
                     cameras_exist = all(
                         os.path.exists(os.path.join(episode_path, cam)) 
                         for cam in required_cameras
@@ -85,11 +85,15 @@ class BsonDexDataset:
                     main_data = bson.decode(f.read())["data"]
                     num_steps = len(main_data["/observation/left_arm/joint_state"])
                 
-                if num_steps >= self.CHUNK_SIZE:  # Drop too short episodes
-                    episode_lens.append(num_steps)
-                    valid_episodes.append(episode_path)
-                else:
-                    print(f"Skipping short episode {episode_path}: {num_steps} steps")
+                # if num_steps >= self.CHUNK_SIZE:  # Drop too short episodes
+                #     episode_lens.append(num_steps)
+                #     valid_episodes.append(episode_path)
+                # else:
+                #     print(f"Skipping short episode {episode_path}: {num_steps} steps")
+
+                episode_lens.append(num_steps)
+                valid_episodes.append(episode_path)
+                
             except Exception as e:
                 print(f"Error reading {episode_path}: {e}")
                 continue
@@ -199,7 +203,7 @@ class BsonDexDataset:
 
         # Prepare image path information (lazy loading - do NOT load actual images)
         # 准备图像路径信息（懒加载 - 不加载实际图像）
-        camera_folders = ['camera_head', 'camera_left_wrist', 'camera_right_wrist', 'camera_third_view']
+        camera_folders = ['camera_head', 'camera_left_wrist', 'camera_right_wrist']
         images_info = {}
         
         for cam_folder in camera_folders:

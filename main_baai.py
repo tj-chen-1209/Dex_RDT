@@ -1,6 +1,6 @@
 import argparse
 import os
-from train.train_baai_lora import train
+from train.train_baai import train
 
 from accelerate.logging import get_logger
 
