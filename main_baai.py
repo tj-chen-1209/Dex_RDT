@@ -41,13 +41,15 @@ def parse_args(input_args=None):
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
 
     parser.add_argument(
-        "--load_from_bson",
-        action="store_true",
-        default=True,
+        "--dataset_source",
+        type=str,
+        default="bson",
+        choices=["bson", "lerobot", "buffer"],
         help=(
-            "Whether to load the dataset directly from BSON files. "
-            "If False, the dataset will be loaded using producer-consumer pattern, "
-            "where the producer reads TFRecords and saves them to buffer, and the consumer reads from buffer."
+            "数据集来源选择:\n"
+            "- 'bson': 直接从BSON文件加载 (BsonDexDataset)\n"
+            "- 'lerobot': 从LeRobot格式加载 (LerobotDexDataset)\n"
+            "- 'buffer': 使用生产者-消费者模式，从buffer加载"
         )
     )
     parser.add_argument(

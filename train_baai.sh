@@ -2,7 +2,7 @@
 # ==============================================================================
 # RDT-1B 全量微调训练脚本 - 针对 A800*7 优化
 # ==============================================================================
-# 数据集：action176 (100 episodes)
+# 数据集：lerobot_baai (100 episodes, LeRobot格式)
 # 硬件：7x NVIDIA A800 (80GB each, 排除GPU:0)
 # 作者：AI Assistant
 # 日期：$(date +%Y-%m-%d)
@@ -28,7 +28,8 @@ export VISION_ENCODER_NAME="google/siglip-so400m-patch14-384"
 
 # ====== 训练超参数配置 ======
 dataset_name="baai"
-action_name="action176"
+action_name="lerobot_baai"
+dataset_source="lerobot"  # 数据源: 'bson' 或 'lerobot'
 model_type="full"
 lr="1e-4"
 train_batch_size=48
@@ -60,6 +61,7 @@ if [ ! -d "$OUTPUT_DIR" ]; then
   Model: RDT-1B (1 Billion parameters)
   Method: Full Fine-tuning (全量微调 - 所有参数可训练)
   Dataset: ${dataset_name}/${action_name} (100 episodes)
+  Dataset Source: ${dataset_source} (LeRobot格式)
   Hardware: 7x NVIDIA A800 (80GB VRAM each, GPU:0 excluded)
   Random Seed: ${seed}
 
@@ -87,7 +89,8 @@ if [ ! -d "$OUTPUT_DIR" ]; then
 
 📊 数据配置
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Load from BSON: Yes
+  Dataset Source: ${dataset_source} (LeRobot格式)
+  Dataset Path: data/baai/data/lerobot_baai
   Precomputed Language Embeddings: Yes (节省计算)
   Image History Size: 2 frames
   Number of Cameras: 3 (RDT-1B模型限制)
@@ -136,6 +139,7 @@ echo "║          🚀 RDT-1B Full Fine-tuning on A800*7                    ║
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
 echo "📦 数据集: ${dataset_name}/${action_name} (100 episodes)"
+echo "📂 数据源: ${dataset_source} (LeRobot格式)"
 echo "🎯 模型: RDT-1B (1B params, full fine-tuning)"
 echo "💻 硬件: 6x A800 GPUs (GPU:0 excluded)"
 echo "📊 全局Batch Size: $((train_batch_size * gradient_accumulation_steps * 6))"
@@ -170,7 +174,7 @@ deepspeed --hostfile=hostfile.txt main_baai.py \
     --image_aug \
     --dataset_type="finetune" \
     --state_noise_snr=40 \
-    --load_from_bson \
+    --dataset_source=${dataset_source} \
     --report_to=tensorboard \
     --precomp_lang_embed
 echo ""

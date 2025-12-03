@@ -230,7 +230,6 @@ class BsonDexDataset:
             "action": action,
             "frame_num": frame_num,
             "images_info": images_info,  # Path info, not actual images
-            "episode_path": episode_path,
         }
 
     def __len__(self):
@@ -378,7 +377,7 @@ class BsonDexDataset:
         if first_idx >= num_steps:  # case where robot doesn't move
             return False, None
 
-        # We randomly sample a timestep TODO
+        # We randomly sample a timestep TODO22e
         step_id = np.random.randint(first_idx-1, num_steps)
         action_dir = os.path.dirname(episode_path)
         # TODO: instruction function

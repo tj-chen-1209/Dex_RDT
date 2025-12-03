@@ -15,6 +15,7 @@ import transformers
 
 from data.filelock import FileLock
 from data.bson_Dex_dataset import BsonDexDataset
+from data.lerobot_Dex_dataset import LerobotDexDataset
 from train.image_corrupt import image_corrupt
 
 
@@ -102,7 +103,7 @@ class VLAConsumerDataset(Dataset):
         cond_mask_prob=0.1,
         cam_ext_mask_prob=-1.0,
         state_noise_snr=None,
-        use_bson=True,
+        dataset_source='bson',  # 'bson' or 'lerobot'
         use_precomp_lang_embed=False
     ):
         super(VLAConsumerDataset, self).__init__()
@@ -135,10 +136,22 @@ class VLAConsumerDataset(Dataset):
         self.img_history_size = img_history_size
         self.cond_mask_prob = cond_mask_prob
         self.cam_ext_mask_prob = cam_ext_mask_prob
-        self.use_bson = use_bson
-        self.bson_dataset = None
-        if use_bson:
-            self.bson_dataset = BsonDexDataset()
+        
+        # 数据集选择: 'bson', 'lerobot' 或 'buffer'
+        self.dataset_source = dataset_source
+        self.raw_dataset = None
+        if dataset_source == 'bson':
+            print("📦 使用 BsonDexDataset (直接加载BSON文件)")
+            self.raw_dataset = BsonDexDataset()
+        elif dataset_source == 'lerobot':
+            print("📦 使用 LerobotDexDataset (加载LeRobot格式)")
+            self.raw_dataset = LerobotDexDataset()
+        elif dataset_source == 'buffer':
+            print("📦 使用缓冲区模式 (生产者-消费者模式)")
+            self.raw_dataset = None  # 使用缓冲区，不需要原始数据集
+        else:
+            raise ValueError(f"未知的dataset_source: {dataset_source}，必须是 'bson', 'lerobot' 或 'buffer'")
+        
         self.use_precomp_lang_embed = use_precomp_lang_embed
         if use_precomp_lang_embed:
             self.empty_lang_embed = torch.load("data/empty_lang_embed.pt")
@@ -204,9 +217,11 @@ class VLAConsumerDataset(Dataset):
         raise RuntimeError("Failed to load sample.")
 
     def __len__(self) -> int:
-        if self.use_bson:
-            return len(self.bson_dataset)
+        if self.raw_dataset is not None:
+            # 使用原始数据集（bson 或 lerobot）
+            return len(self.raw_dataset)
         else:
+            # 使用缓冲区模式
             return self.num_chunks * self.chunk_size
 
     def _safe_load(self, index):
@@ -277,8 +292,9 @@ class VLAConsumerDataset(Dataset):
         while True:
             data_dict = None
             try:
-                if self.use_bson:
-                    res = self.bson_dataset.get_item()
+                if self.raw_dataset is not None:
+                    # 从原始数据集加载 (BsonDexDataset 或 LerobotDexDataset)
+                    res = self.raw_dataset.get_item()
                     content = res['meta']
                     states = res['state']
                     actions = res['actions']
@@ -292,6 +308,7 @@ class VLAConsumerDataset(Dataset):
                     state_mean = res['state_mean']
                     state_norm = res['state_norm']
                 else:
+                    # 从缓冲区加载
                     (content, _, states, _, actions, _,
                      state_elem_mask, *image_metas,
                      state_std, state_mean, state_norm) = self._safe_load(index)

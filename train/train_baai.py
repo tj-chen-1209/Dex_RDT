@@ -328,7 +328,7 @@ def train(args, logger):
         cond_mask_prob=args.cond_mask_prob,
         cam_ext_mask_prob=args.cam_ext_mask_prob,
         state_noise_snr=args.state_noise_snr,
-        use_bson=args.load_from_bson,
+        dataset_source=args.dataset_source,
         use_precomp_lang_embed=args.precomp_lang_embed,
     )
     sample_dataset = VLAConsumerDataset(
@@ -342,7 +342,7 @@ def train(args, logger):
         cond_mask_prob=0,
         cam_ext_mask_prob=-1,
         state_noise_snr=None,
-        use_bson=args.load_from_bson,
+        dataset_source=args.dataset_source,
         use_precomp_lang_embed=args.precomp_lang_embed,
     )
 

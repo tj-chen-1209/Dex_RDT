@@ -1,0 +1,78 @@
+# BSON to LeRobot 转换配置文件
+
+# 数据路径配置
+data:
+  bson_dir: "/home/zhukefei/chensiqi/Dex_RDT/data/baai/data"
+  output_root: "/home/zhukefei/chensiqi/Dex_RDT/data/baai/data/lerobot_baai"
+  output_repo_id: "baai/xhand_bimanual_action176"
+
+# 数据集基本信息
+dataset:
+  fps: 20
+  robot_type: "xhand_bimanual"
+  use_videos: true
+  
+# 转换控制
+conversion:
+  max_episodes: null  # null表示转换全部, 或设置数字如: 10
+  
+# 任务描述
+task:
+  description: "Use the left hand to hook the book '皮囊' from the pile of books,then use the right hand to place it on the right bookshelf."
+
+# 数据特征定义
+features:
+  # 观测状态
+  observation:
+    state:
+      left_arm_joint_pos:
+        dtype: "float32"
+        shape: [6]
+      right_arm_joint_pos:
+        dtype: "float32"
+        shape: [6]
+      left_arm_joint_vel:
+        dtype: "float32"
+        shape: [6]
+      right_arm_joint_vel:
+        dtype: "float32"
+        shape: [6]
+      left_arm_joint_eff:
+        dtype: "float32"
+        shape: [6]
+      right_arm_joint_eff:
+        dtype: "float32"
+        shape: [6]
+      left_hand_obs:
+        dtype: "float32"
+        shape: [12]
+      right_hand_obs:
+        dtype: "float32"
+        shape: [12]
+    
+    # 相机图像
+    images:
+      camera_head_img:
+        dtype: "video"
+        shape: [480, 640, 3]
+      camera_left_wrist_img:
+        dtype: "video"
+        shape: [480, 640, 3]
+      camera_right_wrist_img:
+        dtype: "video"
+        shape: [480, 640, 3]
+      camera_third_view_img:
+        dtype: "video"
+        shape: [480, 640, 3]
+  
+  # 动作
+  action:
+    dtype: "float32"
+    shape: [36]
+
+# 相机映射（BSON文件夹名 -> LeRobot特征名）
+camera_mapping:
+  camera_head: "observation.images.camera_head_img"
+  camera_left_wrist: "observation.images.camera_left_wrist_img"
+  camera_right_wrist: "observation.images.camera_right_wrist_img"
+camera_third_view: "observation.images.camera_third_view_img"
