@@ -406,12 +406,6 @@ def train(args, logger):
     args.num_train_epochs = math.ceil(
         args.max_train_steps / num_update_steps_per_epoch)
 
-    # We need to initialize the trackers we use, and also store our configuration.
-    # The trackers initializes automatically on the main process.
-    if accelerator.is_main_process:
-        accelerator.init_trackers(
-            "roboticDiffusionTransformer", config=vars(args))
-
     # Train!
     total_batch_size = args.train_batch_size * \
         accelerator.num_processes * args.gradient_accumulation_steps
@@ -478,6 +472,13 @@ def train(args, logger):
             first_epoch = global_step // num_update_steps_per_epoch
             resume_step = resume_global_step % (
                 num_update_steps_per_epoch * args.gradient_accumulation_steps)
+
+    # We need to initialize the trackers we use, and also store our configuration.
+    # The trackers initializes automatically on the main process.
+    # NOTE: 必须在 resume checkpoint 之后初始化，否则 load_state 会覆盖 tracker 状态
+    if accelerator.is_main_process:
+        accelerator.init_trackers(
+            "roboticDiffusionTransformer", config=vars(args), init_kwargs={"tensorboard": {"flush_secs": 30}})
 
     # Only show the progress bar once on each machine.
     progress_bar = tqdm(range(global_step, args.max_train_steps),

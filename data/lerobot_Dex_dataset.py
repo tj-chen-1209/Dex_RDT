@@ -60,7 +60,8 @@ class LerobotDexDataset:
         instruction_path = Path(dataset_path) / "instruction.pt"
         if instruction_path.exists():
             # print(f"📝 正在加载instruction embeddings...")
-            self.instruction_embeddings = torch.load(instruction_path)
+            # self.instruction_embeddings = torch.load(instruction_path)
+            self.instruction_embeddings = instruction_path
             # print(f"   ✅ shape={self.instruction_embeddings.shape}")
         else:
             self.instruction_embeddings = None
@@ -172,7 +173,11 @@ class LerobotDexDataset:
     
     def _load_image_from_cache(self, images_info, camera_key, frame_idx):
         """
-        Load image from cached numpy arrays.
+        Load image from cached numpy arrays or files.
+        
+        优先级：
+        1. 预解码的numpy数组（最快）
+        2. 文件序列（需要JPEG解码）
         
         Args:
             images_info: Images info dict from cached episode
@@ -189,22 +194,32 @@ class LerobotDexDataset:
             
             cam_data = images_info[camera_key]
             
+            # 方法1：预解码的numpy数组（最快！）
             if isinstance(cam_data, np.ndarray):
-                # All frames stored as array
+                # All frames stored as decoded array (FAST PATH!)
                 if frame_idx < len(cam_data):
-                    return cam_data[frame_idx].astype(np.uint8)
+                    img = cam_data[frame_idx]
+                    # 确保是uint8类型
+                    if img.dtype != np.uint8:
+                        img = img.astype(np.uint8)
+                    return img
+                else:
+                    # print(f"      ⚠️  帧索引超出范围: {frame_idx} >= {len(cam_data)}")
+                    return np.zeros((480, 640, 3), dtype=np.uint8)
+            
+            # 方法2：文件序列（需要JPEG解码，较慢）
             elif isinstance(cam_data, dict) and 'type' in cam_data:
-                # File-based storage (lazy loading)
                 if cam_data['type'] == 'file_sequence':
                     img_dir = cam_data['path']
-                    img_file = cam_data['files'][frame_idx]
-                    img_path = os.path.join(img_dir, img_file)
-                    
-                    with Image.open(img_path) as img:
-                        img_array = np.array(img)
-                    if img_array.ndim == 2:
-                        img_array = np.stack([img_array] * 3, axis=-1)
-                    return img_array.astype(np.uint8)
+                    if frame_idx < len(cam_data['files']):
+                        img_file = cam_data['files'][frame_idx]
+                        img_path = os.path.join(img_dir, img_file)
+                        
+                        with Image.open(img_path) as img:
+                            img_array = np.array(img)
+                        if img_array.ndim == 2:
+                            img_array = np.stack([img_array] * 3, axis=-1)
+                        return img_array.astype(np.uint8)
             
             # print(f"      ⚠️  无法加载图像")
             return np.zeros((480, 640, 3), dtype=np.uint8)
@@ -298,10 +313,10 @@ class LerobotDexDataset:
         step_id = np.random.randint(first_idx-1, num_steps)
         # print(f"    随机采样步数: {step_id}")
         
-        # Get instruction
-        if self.instruction_embeddings is not None and episode_idx < len(self.instruction_embeddings):
-            instruction = self.instruction_embeddings[episode_idx]
-            # print(f"    Instruction: embedding shape={instruction.shape}")
+        # Get instruction - return path to instruction embeddings file
+        if self.instruction_embeddings is not None:
+            instruction = str(self.instruction_embeddings)
+            # print(f"    Instruction: 使用预计算嵌入路径")
         else:
             instruction = "Use the left hand to hook the book '皮囊' from the pile of books,then use the right hand to place it on the right bookshelf."
             # print(f"    Instruction: 使用默认文本")

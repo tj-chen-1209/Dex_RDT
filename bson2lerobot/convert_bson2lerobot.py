@@ -133,6 +133,7 @@ def convert_bson_to_lerobot(
     robot_type="xhand_bimanual",
     use_videos=True,
     max_episodes=None,  # 新增：限制转换的episode数量，None表示转换全部
+    action_filter=None,  # 新增：只转换特定的action目录，如 "action125"
 ):
     """
     将BSON格式数据集转换为LeRobot格式
@@ -145,6 +146,7 @@ def convert_bson_to_lerobot(
         robot_type: 机器人类型
         use_videos: 是否使用视频格式（推荐True）
         max_episodes: 最多转换的episode数量，None表示转换全部
+        action_filter: 只转换特定的action目录名，None表示转换所有action*目录
     """
     
     # 1. 定义features（根据你的数据结构）
@@ -228,6 +230,14 @@ def convert_bson_to_lerobot(
     
     # 2. 遍历所有action目录
     action_dirs = sorted([d for d in os.listdir(bson_dir) if d.startswith('action')])
+    
+    # 如果指定了action_filter，只处理该action目录
+    if action_filter:
+        action_dirs = [d for d in action_dirs if d == action_filter]
+        if not action_dirs:
+            print(f"❌ 未找到指定的action目录: {action_filter}")
+            return None
+        print(f"🔍 仅转换指定目录: {action_filter}")
     
     # 读取任务指令
     task_instructions = {}
@@ -335,7 +345,7 @@ def load_config(config_path: str) -> dict:
         config = yaml.safe_load(f)
     return config
 
-def convert_with_config(config_path: str, override_output: str = None, override_max_episodes: int = None):
+def convert_with_config(config_path: str, override_output: str = None, override_max_episodes: int = None, action_filter: str = None):
     """
     使用配置文件进行转换
     
@@ -343,6 +353,7 @@ def convert_with_config(config_path: str, override_output: str = None, override_
         config_path: 配置文件路径
         override_output: 覆盖输出目录（可选）
         override_max_episodes: 覆盖最大episode数（可选）
+        action_filter: 只转换特定的action目录（可选）
     """
     # 加载配置
     config = load_config(config_path)
@@ -350,6 +361,7 @@ def convert_with_config(config_path: str, override_output: str = None, override_
     # 读取配置
     output_root = config['data']['output_root']
     max_episodes = config['conversion']['max_episodes']
+    config_action_filter = config.get('conversion', {}).get('action_filter', None)
     
     # 命令行参数覆盖
     if override_output:
@@ -359,6 +371,9 @@ def convert_with_config(config_path: str, override_output: str = None, override_
     if override_max_episodes is not None:
         max_episodes = override_max_episodes
         print(f"📊 覆盖最大episodes数: {max_episodes}")
+    
+    # action_filter优先使用命令行参数，否则使用配置文件
+    final_action_filter = action_filter if action_filter else config_action_filter
     
     # 显示配置信息
     print("\n" + "="*70)
@@ -371,6 +386,7 @@ def convert_with_config(config_path: str, override_output: str = None, override_
     print(f"Robot Type:   {config['dataset']['robot_type']}")
     print(f"Use Videos:   {config['dataset']['use_videos']}")
     print(f"Max Episodes: {max_episodes if max_episodes else '全部'}")
+    print(f"Action Filter: {final_action_filter if final_action_filter else '全部action*目录'}")
     print(f"Task:         {config['task']['description'][:60]}...")
     print("="*70 + "\n")
     
@@ -384,6 +400,7 @@ def convert_with_config(config_path: str, override_output: str = None, override_
             robot_type=config['dataset']['robot_type'],
             use_videos=config['dataset']['use_videos'],
             max_episodes=max_episodes,
+            action_filter=final_action_filter,
         )
         
         print("\n" + "="*70)
@@ -423,6 +440,9 @@ def main():
   
   # 仅转换前10个episodes（测试用）
   python convert_bson2lerobot.py -n 10
+  
+  # 只转换特定action目录
+  python convert_bson2lerobot.py -a action125
         """
     )
     
@@ -447,6 +467,13 @@ def main():
         help='最多转换的episode数量（覆盖配置文件设置）'
     )
     
+    parser.add_argument(
+        '--action-filter', '-a',
+        type=str,
+        default=None,
+        help='只转换特定的action目录，如 action125'
+    )
+    
     args = parser.parse_args()
     
     # 解析配置文件路径（相对于脚本目录）
@@ -461,7 +488,8 @@ def main():
     success = convert_with_config(
         config_path=str(config_path),
         override_output=args.output_dir,
-        override_max_episodes=args.max_episodes
+        override_max_episodes=args.max_episodes,
+        action_filter=args.action_filter
     )
     
     sys.exit(0 if success else 1)

@@ -1,0 +1,15 @@
+{
+  "checkpoint": "./checkpoints/rdt1b-full-action176-20251202_000048/checkpoint-14000",
+  "dataset": "./data/baai/data/lerobot_baai",
+  "config": "configs/base.yaml",
+  "vision_encoder": "google/siglip-so400m-patch14-384",
+  "num_episodes": 10,
+  "samples_per_episode": 6,
+  "chunk_size": 64,
+  "output_dir": "baai_eval/eval_results/eval_checkpoint-14000_20251205_164801",
+  "device": "cuda",
+  "seed": 42,
+  "save_samples": true,
+  "episode_list": null,
+  "timestamp": "20251205_164801"
+}
